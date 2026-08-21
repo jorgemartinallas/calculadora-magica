@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101114">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Calculadora">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Calculadora</title>
+  <style>
+    :root{
+      --bg:#101114;
+      --surface:#181a1f;
+      --key:#22252b;
+      --key2:#2b2f36;
+      --op:#2c3340;
+      --accent:#9ec5ff;
+      --accentText:#082044;
+      --text:#f3f5f8;
+      --muted:#aeb4bd;
+      --danger:#ffb4ab;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+    body{display:flex;justify-content:center}
+    button,input,select{font:inherit}
+    .app{
+      width:min(100%,460px);
+      min-height:100dvh;
+      padding:max(12px,env(safe-area-inset-top)) 14px max(16px,env(safe-area-inset-bottom));
+      display:flex;flex-direction:column;
+    }
+    .topbar{height:42px;display:flex;align-items:center;justify-content:flex-end;color:var(--muted);font-size:13px}
+    .display{
+      min-height:190px;flex:1;
+      display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;
+      padding:14px 6px 18px;
+      user-select:none;
+    }
+    .expr{
+      width:100%;min-height:24px;text-align:right;color:var(--muted);
+      font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .value{
+      width:100%;text-align:right;font-weight:400;
+      font-size:clamp(42px,13vw,64px);letter-spacing:-1.5px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .key{
+      border:0;border-radius:24px;min-height:68px;
+      background:var(--key);color:var(--text);
+      font-size:25px;font-weight:450;
+      touch-action:manipulation;
+      transition:transform .06s ease,filter .08s ease;
+    }
+    .key:active{transform:scale(.97);filter:brightness(1.12)}
+    .key.fn{background:var(--key2);color:var(--accent)}
+    .key.op{background:var(--op);color:var(--accent);font-size:30px}
+    .key.eq{background:var(--accent);color:var(--accentText);font-size:30px}
+    .zero{grid-column:span 2}
+    .sheet-wrap{
+      position:fixed;inset:0;background:rgba(0,0,0,.58);
+      display:none;align-items:flex-end;justify-content:center;padding:12px;
+      z-index:20;
+    }
+    .sheet-wrap.show{display:flex}
+    .sheet{
+      width:min(100%,460px);background:var(--surface);border-radius:28px 28px 18px 18px;
+      padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.45)
+    }
+    .grab{width:42px;height:4px;border-radius:99px;background:#5f646d;margin:-6px auto 18px}
+    h2{font-size:20px;margin:0 0 4px}
+    .sub{color:var(--muted);font-size:14px;margin:0 0 18px}
+    .row{display:flex;gap:10px;margin:10px 0}
+    .choice{
+      flex:1;border:1px solid #3a3f47;background:#202329;color:var(--text);
+      padding:12px 10px;border-radius:16px;text-align:center
+    }
+    .choice.active{border-color:var(--accent);color:var(--accent)}
+    .field{margin:14px 0}
+    label{display:block;color:var(--muted);font-size:13px;margin-bottom:7px}
+    input,select{
+      width:100%;border:1px solid #3a3f47;border-radius:14px;background:#202329;color:var(--text);
+      padding:13px 14px;outline:none
+    }
+    input:focus,select:focus{border-color:var(--accent)}
+    .preview{
+      margin:16px 0;padding:14px;border-radius:16px;background:#202329
+    }
+    .preview small{color:var(--muted)}
+    .preview strong{display:block;font-size:28px;margin-top:4px}
+    .save{
+      width:100%;border:0;border-radius:16px;background:var(--accent);color:var(--accentText);
+      padding:14px;font-weight:650;margin-top:4px
+    }
+    .hint{
+      position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(18px);
+      background:#2a2e35;color:var(--text);padding:10px 14px;border-radius:999px;
+      font-size:13px;opacity:0;pointer-events:none;transition:.18s ease;z-index:30;
+      white-space:nowrap
+    }
+    .hint.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .hidden{display:none!important}
+    @media (max-height:720px){
+      .display{min-height:120px}
+      .key{min-height:58px}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar" id="status"></div>
+
+    <section class="display" aria-live="polite">
+      <div class="expr" id="expr"></div>
+      <div class="value" id="value">0</div>
+    </section>
+
+    <section class="keys" aria-label="Teclado de calculadora">
+      <button class="key fn" id="ac">AC</button>
+      <button class="key fn" data-action="sign">±</button>
+      <button class="key fn" data-action="percent">%</button>
+      <button class="key op" data-op="÷">÷</button>
+
+      <button class="key" data-digit="7">7</button>
+      <button class="key" data-digit="8">8</button>
+      <button class="key" data-digit="9">9</button>
+      <button class="key op" data-op="×">×</button>
+
+      <button class="key" data-digit="4">4</button>
+      <button class="key" data-digit="5">5</button>
+      <button class="key" data-digit="6">6</button>
+      <button class="key op" data-op="−">−</button>
+
+      <button class="key" data-digit="1">1</button>
+      <button class="key" data-digit="2">2</button>
+      <button class="key" data-digit="3">3</button>
+      <button class="key op" id="plus">+</button>
+
+      <button class="key zero" data-digit="0">0</button>
+      <button class="key" data-action="decimal">,</button>
+      <button class="key eq" id="equals">=</button>
+    </section>
+  </main>
+
+  <div class="sheet-wrap" id="settingsWrap">
+    <section class="sheet">
+      <div class="grab"></div>
+      <h2>Configuración</h2>
+      <p class="sub">Mantén pulsado AC para volver a abrirla.</p>
+
+      <div class="row">
+        <button class="choice" id="todayChoice">Fecha de hoy</button>
+        <button class="choice" id="customChoice">Número propio</button>
+      </div>
+
+      <div class="field" id="formatField">
+        <label for="dateFormat">Formato</label>
+        <select id="dateFormat">
+          <option value="DDMMYYYY">DDMMAAAA</option>
+          <option value="YYYYMMDD">AAAAMMDD</option>
+        </select>
+      </div>
+
+      <div class="field hidden" id="customField">
+        <label for="customTarget">Número objetivo</label>
+        <input id="customTarget" inputmode="numeric" pattern="[0-9]*" value="5000000">
+      </div>
+
+      <div class="preview">
+        <small>Objetivo</small>
+        <strong id="previewValue">0</strong>
+      </div>
+
+      <button class="save" id="saveSettings">Guardar y cerrar</button>
+    </section>
+  </div>
+
+  <div class="hint" id="hint"></div>
+
+  <script>
+  (() => {
+    const $ = s => document.querySelector(s);
+    const valueEl = $('#value');
+    const exprEl = $('#expr');
+    const statusEl = $('#status');
+    const settingsWrap = $('#settingsWrap');
+    const todayChoice = $('#todayChoice');
+    const customChoice = $('#customChoice');
+    const formatField = $('#formatField');
+    const customField = $('#customField');
+    const dateFormat = $('#dateFormat');
+    const customTarget = $('#customTarget');
+    const previewValue = $('#previewValue');
+    const hint = $('#hint');
+
+    let parts = [];
+    let current = '0';
+    let fresh = true;
+    let evaluated = false;
+
+    let targetMode = localStorage.getItem('mc_targetMode') || 'today';
+    let storedFormat = localStorage.getItem('mc_dateFormat') || 'DDMMYYYY';
+    let storedCustom = localStorage.getItem('mc_customTarget') || '5000000';
+    dateFormat.value = storedFormat;
+    customTarget.value = storedCustom;
+
+    let forceActive = false;
+    let forceDigits = '';
+    let forceIndex = 0;
+    let forceBase = 0;
+    let forceTarget = 0;
+    let forceFinished = false;
+
+    let toastTimer = null;
+    let acHoldTimer = null;
+    let acLong = false;
+
+    let lastPlusTap = 0;
+    let plusSingleTimer = null;
+
+    function toast(text, ms=1000){
+      clearTimeout(toastTimer);
+      hint.textContent = text;
+      hint.classList.add('show');
+      toastTimer = setTimeout(() => hint.classList.remove('show'), ms);
+    }
+
+    function groupDigits(raw){
+      const sign = raw.startsWith('-') ? '-' : '';
+      if(sign) raw = raw.slice(1);
+      const [a,b] = raw.split('.');
+      const grouped = (a || '0').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+      return sign + grouped + (b !== undefined ? ',' + b : '');
+    }
+
+    function formatNumber(n){
+      if(!Number.isFinite(n)) return 'Error';
+      return new Intl.NumberFormat('es-ES',{maximumFractionDigits:10}).format(n);
+    }
+
+    function render(){
+      valueEl.textContent = groupDigits(current);
+      if(!forceActive){
+        const visible = [...parts];
+        if(!fresh && !evaluated) visible.push(current);
+        exprEl.textContent = visible.join(' ');
+      }
+    }
+
+    function normalized(arr){
+      return arr.map(v => v==='×'?'*':v==='÷'?'/':v==='−'?'-':v).join('');
+    }
+
+    function evaluate(arr){
+      let copy = [...arr];
+      while(copy.length && ['+','−','×','÷'].includes(copy[copy.length-1])) copy.pop();
+      if(!copy.length) return Number(current);
+      const src = normalized(copy);
+      if(!/^[0-9+\-*/.]+$/.test(src)) return NaN;
+      try { return Function('"use strict";return ('+src+')')(); }
+      catch { return NaN; }
+    }
+
+    function reset(){
+      parts=[]; current='0'; fresh=true; evaluated=false;
+      forceActive=false; forceDigits=''; forceIndex=0; forceFinished=false;
+      exprEl.textContent=''; statusEl.textContent='';
+      render();
+    }
+
+    function targetString(){
+      if(targetMode==='custom'){
+        return (customTarget.value.replace(/\D/g,'').slice(0,12) || '0');
+      }
+      const d = new Date();
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yyyy = String(d.getFullYear());
+      return dateFormat.value==='YYYYMMDD' ? yyyy+mm+dd : dd+mm+yyyy;
+    }
+
+    function targetNumber(){ return Number(targetString()); }
+
+    function updateSettingsUi(){
+      todayChoice.classList.toggle('active', targetMode==='today');
+      customChoice.classList.toggle('active', targetMode==='custom');
+      formatField.classList.toggle('hidden', targetMode!=='today');
+      customField.classList.toggle('hidden', targetMode!=='custom');
+      previewValue.textContent = formatNumber(targetNumber());
+    }
+
+    function subtotal(){
+      const arr=[...parts];
+      if(!fresh) arr.push(current);
+      return arr.length ? evaluate(arr) : Number(current);
+    }
+
+    function armForce(){
+      const s = subtotal();
+      const t = targetNumber();
+
+      if(!Number.isFinite(s) || !Number.isInteger(s)){
+        toast('El subtotal debe ser entero',1500); return;
+      }
+      if(!Number.isFinite(t) || !Number.isInteger(t) || t<=s){
+        toast('El objetivo debe ser mayor',1500); return;
+      }
+
+      const missing = t - s;
+      forceActive = true;
+      forceDigits = String(missing);
+      forceIndex = 0;
+      forceBase = s;
+      forceTarget = t;
+      forceFinished = false;
+
+      // Guardamos el subtotal, pero visualmente empezamos a introducir
+      // un nuevo sumando después del +.
+      parts = [];
+      current = '0';
+      fresh = false;
+      evaluated = false;
+      exprEl.textContent = formatNumber(forceBase) + ' +';
+      valueEl.textContent = '0';
+
+      // Activación silenciosa: no mostramos mensajes secretos en pantalla.
+    }
+
+    function digit(d){
+      if(forceActive){
+        // El espectador puede tocar CUALQUIER cifra.
+        // Ignoramos cuál ha tocado y mostramos el siguiente dígito
+        // del complemento real: objetivo - subtotal.
+        if(forceFinished) return;
+        if(forceIndex===0) current='';
+        current += forceDigits[forceIndex];
+        forceIndex++;
+
+        valueEl.textContent = groupDigits(current);
+        exprEl.textContent = formatNumber(forceBase) + ' + ' + groupDigits(current);
+
+        // Cuando ya están todas las cifras, las pulsaciones extra se ignoran.
+        if(forceIndex>=forceDigits.length){
+          forceFinished=true;
+        }
+        return;
+      }
+
+      if(evaluated){
+        parts=[]; current=d; fresh=false; evaluated=false;
+      }else if(fresh || current==='0'){
+        current=d; fresh=false;
+      }else if(current.replace('-','').replace('.','').length<15){
+        current+=d;
+      }
+      render();
+    }
+
+    function decimal(){
+      if(forceActive) return;
+      if(evaluated){ parts=[]; current='0.'; fresh=false; evaluated=false; }
+      else if(fresh){ current='0.'; fresh=false; }
+      else if(!current.includes('.')) current+='.';
+      render();
+    }
+
+    function op(symbol){
+      if(forceActive) return;
+
+      if(evaluated){
+        parts=[current,symbol];
+        fresh=true; evaluated=false; render(); return;
+      }
+
+      if(!fresh) parts.push(current);
+
+      if(parts.length && ['+','−','×','÷'].includes(parts[parts.length-1])){
+        parts[parts.length-1]=symbol;
+      }else{
+        parts.push(symbol);
+      }
+      fresh=true;
+      render();
+    }
+
+    function equalsShort(){
+      // Durante la fase final, un toque normal en = NO revela nada.
+      // La revelación solo se hace con pulsación larga.
+      if(forceActive) return;
+
+      const arr=[...parts];
+      if(!fresh) arr.push(current);
+      const r=evaluate(arr);
+      if(!Number.isFinite(r)){
+        exprEl.textContent='Error'; current='0'; parts=[]; fresh=true; return render();
+      }
+      exprEl.textContent=arr.join(' ')+' =';
+      current=String(Number(r.toFixed(10)));
+      valueEl.textContent=groupDigits(current);
+      parts=[]; fresh=true; evaluated=true;
+    }
+
+    function equalsLong(){
+      if(forceActive){
+        // Solo revelamos cuando ya se ha construido todo el complemento.
+        if(!forceFinished) return;
+
+        // La operación mostrada es matemáticamente real:
+        // subtotal + (objetivo - subtotal) = objetivo.
+        exprEl.textContent =
+          formatNumber(forceBase) + ' + ' + formatNumber(Number(forceDigits)) + ' =';
+
+        current=String(forceTarget);
+        valueEl.textContent=groupDigits(current);
+
+        forceActive=false;
+        forceDigits='';
+        forceIndex=0;
+        forceFinished=false;
+        parts=[];
+        fresh=true;
+        evaluated=true;
+        return;
+      }
+
+      // Si se mantiene = fuera del modo final, se comporta como un = normal.
+      equalsShort();
+    }
+
+    function sign(){
+      if(forceActive) return;
+      if(current!=='0') current=current.startsWith('-')?current.slice(1):'-'+current;
+      render();
+    }
+
+    function percent(){
+      if(forceActive) return;
+      current=String(Number(current)/100);
+      fresh=false;
+      render();
+    }
+
+    document.querySelectorAll('[data-digit]').forEach(b=>b.addEventListener('click',()=>digit(b.dataset.digit)));
+    document.querySelectorAll('[data-op]').forEach(b=>{
+      if(b.id==='plus') return;
+      b.addEventListener('click',()=>op(b.dataset.op));
+    });
+    $('[data-action="decimal"]').addEventListener('click',decimal);
+    $('[data-action="sign"]').addEventListener('click',sign);
+    $('[data-action="percent"]').addEventListener('click',percent);
+    // = corto: cálculo normal.
+    // = mantenido ~0,8 s: revelar el objetivo durante la fase final.
+    let eqHoldTimer = null;
+    let eqLongTriggered = false;
+
+    $('#equals').addEventListener('pointerdown',()=>{
+      eqLongTriggered=false;
+      eqHoldTimer=setTimeout(()=>{
+        eqLongTriggered=true;
+        equalsLong();
+      },800);
+    });
+
+    const finishEquals=()=>{
+      clearTimeout(eqHoldTimer);
+      if(!eqLongTriggered) equalsShort();
+      eqLongTriggered=false;
+    };
+
+    $('#equals').addEventListener('pointerup',finishEquals);
+    $('#equals').addEventListener('pointercancel',()=>clearTimeout(eqHoldTimer));
+    $('#equals').addEventListener('pointerleave',()=>clearTimeout(eqHoldTimer));
+
+    // DOBLE TOQUE EN + = activar la fase final.
+    $('#plus').addEventListener('click',()=>{
+      const now=Date.now();
+      if(now-lastPlusTap<300){
+        clearTimeout(plusSingleTimer);
+        lastPlusTap=0;
+        armForce();
+        return;
+      }
+      lastPlusTap=now;
+      plusSingleTimer=setTimeout(()=>{
+        op('+');
+        lastPlusTap=0;
+      },310);
+    });
+
+    // AC normal = borrar. Mantener AC ~0.8 s = configuración.
+    $('#ac').addEventListener('pointerdown',()=>{
+      acLong=false;
+      acHoldTimer=setTimeout(()=>{
+        acLong=true;
+        updateSettingsUi();
+        settingsWrap.classList.add('show');
+      },800);
+    });
+    const finishAc=()=>{
+      clearTimeout(acHoldTimer);
+      if(!acLong) reset();
+      acLong=false;
+    };
+    $('#ac').addEventListener('pointerup',finishAc);
+    $('#ac').addEventListener('pointercancel',()=>clearTimeout(acHoldTimer));
+    $('#ac').addEventListener('pointerleave',()=>clearTimeout(acHoldTimer));
+
+    todayChoice.addEventListener('click',()=>{targetMode='today';updateSettingsUi()});
+    customChoice.addEventListener('click',()=>{targetMode='custom';updateSettingsUi()});
+    dateFormat.addEventListener('change',updateSettingsUi);
+    customTarget.addEventListener('input',()=>{
+      customTarget.value=customTarget.value.replace(/\D/g,'').slice(0,12);
+      updateSettingsUi();
+    });
+
+    $('#saveSettings').addEventListener('click',()=>{
+      localStorage.setItem('mc_targetMode',targetMode);
+      localStorage.setItem('mc_dateFormat',dateFormat.value);
+      localStorage.setItem('mc_customTarget',customTarget.value);
+      settingsWrap.classList.remove('show');
+      reset();
+    });
+
+    settingsWrap.addEventListener('click',(e)=>{
+      if(e.target===settingsWrap) settingsWrap.classList.remove('show');
+    });
+
+    updateSettingsUi();
+    render();
+
+    if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    }
+  })();
+  </script>
+</body>
+</html>

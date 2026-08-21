@@ -1,0 +1,33 @@
+CALCULADORA MÁGICA V3 — FLUJO DEL EFECTO
+
+1. Mantén pulsado AC (~0,8 s) y elige:
+   - Fecha de hoy, o
+   - Número objetivo personalizado.
+2. Haz operaciones normales con varias personas.
+3. Cuando ya tengas el subtotal, toca + DOS VECES RÁPIDO.
+4. La app calcula en secreto:
+      COMPLEMENTO = OBJETIVO - SUBTOTAL
+5. Gira el móvil boca abajo.
+6. El espectador toca números al azar.
+   - Da igual qué números toque.
+   - Cada pulsación escribe en pantalla el siguiente dígito del COMPLEMENTO.
+   - Cuando se completa el complemento, las pulsaciones extra se ignoran.
+7. Al girar el móvil boca arriba se verá, por ejemplo:
+      35.000 + 21.047.026
+   aunque el espectador haya tocado otras cifras.
+8. Un toque CORTO en = durante esta fase no hace nada.
+9. Mantén pulsado = durante ~0,8 s.
+10. La calculadora hace:
+      35.000 + 21.047.026 = 21.082.026
+    y aparece el objetivo final.
+
+TRIGGERS
+- AC corto: borrar/reset.
+- AC mantenido: configuración secreta.
+- Doble toque rápido en +: activar fase final.
+- = mantenido: efectuar la suma final/revelar objetivo.
+
+CONSEJO
+Haz que el espectador pulse bastantes veces (por ejemplo 10–12).
+Si el complemento tiene 8 cifras, las primeras 8 lo construyen y
+las pulsaciones posteriores se ignoran.
