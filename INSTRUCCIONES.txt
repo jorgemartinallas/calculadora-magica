@@ -1,0 +1,61 @@
+CALCULADORA ANDROID MÁGICA — INSTRUCCIONES
+
+CONFIGURAR OBJETIVO
+1. Mantén pulsado AC durante unos 0,8 segundos.
+2. Elige:
+   - Fecha de hoy.
+   - Número propio.
+3. Para fecha puedes elegir:
+   - DDMMAA (recomendado para el truco): por ejemplo 220826.
+   - DDMMAAAA.
+   - AAAAMMDD.
+4. Pulsa Guardar y cerrar.
+
+USO NORMAL
+La calculadora funciona normalmente con:
+- +, -, × y ÷
+- decimales
+- porcentaje
+- paréntesis
+- retroceso
+- AC
+- =
+
+EFECTO
+1. Varias personas hacen operaciones normales.
+2. Cuando ya tienes el subtotal, pulsa + DOS VECES RÁPIDO.
+3. La app calcula en secreto:
+      COMPLEMENTO = OBJETIVO - SUBTOTAL
+4. Gira el móvil boca abajo.
+5. El espectador toca números al azar.
+6. Da igual qué teclas numéricas pulse:
+   cada pulsación introduce el siguiente dígito del COMPLEMENTO.
+7. Cuando ya se han introducido todas sus cifras, las pulsaciones extra
+   no cambian el número.
+8. Al girar el móvil boca arriba se verá:
+      SUBTOTAL + COMPLEMENTO
+9. Un toque corto en = durante esta fase no revela el resultado.
+10. Mantén pulsado = unos 0,8 segundos.
+11. Aparece el OBJETIVO final.
+
+EJEMPLO
+Objetivo: 220826
+Subtotal: 54525
+Complemento secreto: 166301
+
+Aunque el espectador toque cifras totalmente distintas con el móvil boca abajo,
+cuando lo gire aparecerá 166301.
+
+Manteniendo =:
+54525 + 166301 = 220826
+
+GESTOS SECRETOS
+- AC corto: borrar.
+- AC largo: configuración.
+- + dos veces rápido: activar fase final.
+- = largo: efectuar suma final.
+
+IMPORTANTE
+- El subtotal debe ser un número entero.
+- El objetivo debe ser mayor que el subtotal.
+- Para el formato DDMMAA, diseña las preguntas para no superar el objetivo.

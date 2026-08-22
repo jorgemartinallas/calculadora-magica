@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#0d0f12">
+  <meta name="background-color" content="#0d0f12">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Calculadora">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Calculadora</title>
+  <style>
+    :root{
+      --bg:#0d0f12;
+      --digit:#24272d;
+      --function:#3a4255;
+      --function-strong:#50638c;
+      --equal:#ead6ff;
+      --equal-text:#493b55;
+      --text:#f1f3fa;
+      --op-text:#c9d2ea;
+      --muted:#9da2b1;
+      --cursor:#bfd0ff;
+      --sheet:#191c22;
+      --field:#24272e;
+      --line:#373b45;
+    }
+
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+      user-select:none;
+    }
+
+    html,body{
+      margin:0;
+      width:100%;
+      min-height:100%;
+      background:var(--bg);
+      color:var(--text);
+      overflow:hidden;
+      font-family:Roboto,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+
+    button,input,select{font:inherit}
+
+    body{display:flex;justify-content:center}
+
+    .calculator{
+      width:min(100vw,520px);
+      height:100dvh;
+      min-height:620px;
+      display:grid;
+      grid-template-rows:auto minmax(150px,1fr) auto;
+      padding:
+        max(18px, env(safe-area-inset-top))
+        7px
+        max(8px, env(safe-area-inset-bottom));
+      background:var(--bg);
+    }
+
+    .tools{
+      min-height:70px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      padding:22px 36px 0;
+      color:var(--muted);
+    }
+
+    .icon-button{
+      width:42px;
+      height:42px;
+      border:0;
+      background:transparent;
+      color:var(--muted);
+      display:grid;
+      place-items:center;
+      padding:0;
+      border-radius:50%;
+    }
+
+    .icon-button:active{background:rgba(255,255,255,.06)}
+
+    .dots{
+      width:5px;height:5px;border-radius:50%;
+      background:currentColor;
+      box-shadow:0 -9px 0 currentColor,0 9px 0 currentColor;
+    }
+
+    .display-area{
+      min-height:0;
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      align-items:flex-end;
+      padding:8px 26px 42px 32px;
+    }
+
+    .expression{
+      width:100%;
+      min-height:31px;
+      text-align:right;
+      color:var(--muted);
+      font-size:18px;
+      font-weight:400;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      margin-bottom:7px;
+    }
+
+    .main-value{
+      max-width:100%;
+      min-height:74px;
+      text-align:right;
+      font-size:clamp(45px,13.5vw,72px);
+      line-height:1.08;
+      font-weight:400;
+      letter-spacing:-1.5px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .cursor{
+      position:absolute;
+      right:28px;
+      top:20%;
+      width:3px;
+      height:122px;
+      background:var(--cursor);
+      opacity:0;
+      pointer-events:none;
+    }
+
+    .chevrons{
+      position:absolute;
+      left:43px;
+      bottom:22px;
+      width:24px;
+      height:35px;
+      opacity:.95;
+    }
+    .chevrons::before,.chevrons::after{
+      content:"";
+      position:absolute;
+      left:5px;
+      width:10px;height:10px;
+      border-left:3px solid var(--muted);
+      border-top:3px solid var(--muted);
+    }
+    .chevrons::before{top:2px;transform:rotate(45deg)}
+    .chevrons::after{bottom:2px;transform:rotate(225deg)}
+
+    .keypad{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:7px;
+      padding-bottom:2px;
+    }
+
+    .key{
+      appearance:none;
+      border:0;
+      aspect-ratio:1/0.96;
+      min-height:58px;
+      border-radius:999px;
+      background:var(--digit);
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:clamp(31px,9vw,49px);
+      font-weight:300;
+      line-height:1;
+      touch-action:manipulation;
+      transition:filter .055s ease,transform .055s ease;
+      padding:0;
+    }
+
+    .key:active{
+      filter:brightness(1.24);
+      transform:scale(.985);
+    }
+
+    .key.function{
+      background:var(--function);
+      color:var(--op-text);
+    }
+
+    .key.ac{
+      background:var(--function-strong);
+      color:#d9e3ff;
+      font-size:clamp(29px,8vw,45px);
+    }
+
+    .key.operator{
+      background:var(--function);
+      color:var(--op-text);
+      font-size:clamp(36px,10vw,54px);
+    }
+
+    .key.equal{
+      background:var(--equal);
+      color:var(--equal-text);
+      font-size:clamp(37px,10vw,54px);
+    }
+
+    .key.small-symbol{
+      font-size:clamp(28px,8vw,43px);
+    }
+
+    .backspace-icon{
+      width:43%;height:37%;
+      position:relative;
+      border:3px solid currentColor;
+      border-radius:4px;
+      border-left:0;
+      margin-left:8px;
+    }
+    .backspace-icon::before{
+      content:"";
+      position:absolute;
+      width:18px;height:18px;
+      left:-9px;top:50%;
+      border-left:3px solid currentColor;
+      border-bottom:3px solid currentColor;
+      transform:translateY(-50%) rotate(45deg);
+      background:transparent;
+    }
+    .backspace-icon::after{
+      content:"×";
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:25px;
+      font-weight:400;
+      margin-left:-3px;
+      margin-top:-2px;
+    }
+
+    .sheet-overlay{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      background:rgba(0,0,0,.62);
+      z-index:50;
+      padding:12px;
+    }
+    .sheet-overlay.show{display:flex}
+
+    .sheet{
+      width:min(100%,500px);
+      background:var(--sheet);
+      color:var(--text);
+      border-radius:28px 28px 20px 20px;
+      padding:14px 18px max(18px,env(safe-area-inset-bottom));
+      box-shadow:0 18px 60px rgba(0,0,0,.5);
+    }
+
+    .grab{
+      width:42px;height:4px;border-radius:10px;
+      background:#626875;
+      margin:0 auto 18px;
+    }
+
+    .sheet h2{margin:0 0 5px;font-size:20px;font-weight:500}
+    .sheet p{margin:0 0 18px;color:var(--muted);font-size:14px}
+
+    .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:15px}
+
+    .mode-btn{
+      border:1px solid var(--line);
+      background:var(--field);
+      color:var(--text);
+      padding:12px 8px;
+      border-radius:16px;
+    }
+    .mode-btn.active{
+      border-color:#9db7fa;
+      color:#cbd9ff;
+      background:#30394b;
+    }
+
+    .field{margin:12px 0}
+    .field label{
+      display:block;
+      font-size:13px;
+      color:var(--muted);
+      margin:0 0 7px;
+    }
+    .field input,.field select{
+      width:100%;
+      border:1px solid var(--line);
+      background:var(--field);
+      color:var(--text);
+      border-radius:14px;
+      padding:13px 14px;
+      outline:none;
+      user-select:text;
+    }
+
+    .preview{
+      background:var(--field);
+      border-radius:16px;
+      padding:13px 14px;
+      margin:15px 0;
+    }
+    .preview span{display:block;color:var(--muted);font-size:12px}
+    .preview strong{display:block;font-size:28px;font-weight:400;margin-top:4px}
+
+    .save{
+      width:100%;
+      border:0;
+      border-radius:18px;
+      padding:14px;
+      background:var(--equal);
+      color:var(--equal-text);
+      font-weight:600;
+    }
+
+    .hidden{display:none!important}
+
+    @media (max-height:760px){
+      .tools{min-height:54px;padding-top:6px}
+      .display-area{padding-bottom:20px}
+      .keypad{gap:6px}
+      .key{min-height:52px}
+      .chevrons{display:none}
+    }
+  </style>
+</head>
+<body>
+  <main class="calculator">
+    <div class="tools">
+      <button class="icon-button" aria-label="Menú">
+        <span class="dots"></span>
+      </button>
+    </div>
+
+    <section class="display-area" aria-live="polite">
+      <div id="cursor" class="cursor"></div>
+      <div id="expression" class="expression"></div>
+      <div id="display" class="main-value">0</div>
+      <div class="chevrons" aria-hidden="true"></div>
+    </section>
+
+    <section class="keypad" aria-label="Calculadora">
+      <button id="ac" class="key ac" type="button">AC</button>
+      <button id="paren" class="key function small-symbol" type="button">()</button>
+      <button id="percent" class="key function" type="button">%</button>
+      <button class="key operator" data-op="÷" type="button">÷</button>
+
+      <button class="key" data-digit="7" type="button">7</button>
+      <button class="key" data-digit="8" type="button">8</button>
+      <button class="key" data-digit="9" type="button">9</button>
+      <button class="key operator" data-op="×" type="button">×</button>
+
+      <button class="key" data-digit="4" type="button">4</button>
+      <button class="key" data-digit="5" type="button">5</button>
+      <button class="key" data-digit="6" type="button">6</button>
+      <button class="key operator" data-op="−" type="button">−</button>
+
+      <button class="key" data-digit="1" type="button">1</button>
+      <button class="key" data-digit="2" type="button">2</button>
+      <button class="key" data-digit="3" type="button">3</button>
+      <button id="plus" class="key operator" type="button">+</button>
+
+      <button class="key" data-digit="0" type="button">0</button>
+      <button id="decimal" class="key" type="button">.</button>
+      <button id="backspace" class="key" type="button" aria-label="Borrar">
+        <span class="backspace-icon"></span>
+      </button>
+      <button id="equals" class="key equal" type="button">=</button>
+    </section>
+  </main>
+
+  <div id="settingsOverlay" class="sheet-overlay">
+    <section class="sheet">
+      <div class="grab"></div>
+      <h2>Configuración</h2>
+      <p>Esta pantalla solo aparece manteniendo pulsado AC.</p>
+
+      <div class="mode-row">
+        <button id="todayMode" class="mode-btn" type="button">Fecha de hoy</button>
+        <button id="customMode" class="mode-btn" type="button">Número propio</button>
+      </div>
+
+      <div id="formatField" class="field">
+        <label for="dateFormat">Formato de fecha</label>
+        <select id="dateFormat">
+          <option value="DDMMYY">DDMMAA · 220826</option>
+          <option value="DDMMYYYY">DDMMAAAA · 22082026</option>
+          <option value="YYYYMMDD">AAAAMMDD · 20260822</option>
+        </select>
+      </div>
+
+      <div id="customField" class="field hidden">
+        <label for="customTarget">Número objetivo</label>
+        <input id="customTarget" inputmode="numeric" pattern="[0-9]*" value="5000000">
+      </div>
+
+      <div class="preview">
+        <span>Objetivo actual</span>
+        <strong id="targetPreview">0</strong>
+      </div>
+
+      <button id="saveSettings" class="save" type="button">Guardar y cerrar</button>
+    </section>
+  </div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const display = $('#display');
+  const expression = $('#expression');
+  const cursor = $('#cursor');
+  const settingsOverlay = $('#settingsOverlay');
+  const todayModeBtn = $('#todayMode');
+  const customModeBtn = $('#customMode');
+  const formatField = $('#formatField');
+  const customField = $('#customField');
+  const dateFormat = $('#dateFormat');
+  const customTarget = $('#customTarget');
+  const targetPreview = $('#targetPreview');
+
+  let tokens = [];
+  let current = '0';
+  let fresh = true;
+  let evaluated = false;
+
+  let mode = localStorage.getItem('magic_mode') || 'today';
+  let savedFormat = localStorage.getItem('magic_date_format') || 'DDMMYY';
+  let savedTarget = localStorage.getItem('magic_custom_target') || '5000000';
+  dateFormat.value = savedFormat;
+  customTarget.value = savedTarget;
+
+  // Fase mágica
+  let forceActive = false;
+  let forceDigits = '';
+  let forceIndex = 0;
+  let forceBase = 0;
+  let forceTarget = 0;
+  let forceFinished = false;
+
+  // Gestos secretos
+  let acTimer = null;
+  let acLong = false;
+  let eqTimer = null;
+  let eqLong = false;
+  let lastPlusTap = 0;
+  let plusTimer = null;
+
+  const operators = ['+','−','×','÷'];
+
+  function formatEntry(raw){
+    raw = String(raw ?? '0');
+    if(raw === '' || raw === '-') return raw || '0';
+    const sign = raw.startsWith('-') ? '-' : '';
+    if(sign) raw = raw.slice(1);
+    const parts = raw.split('.');
+    const intPart = (parts[0] || '0').replace(/^0+(?=\d)/,'');
+    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+    return sign + grouped + (parts.length > 1 ? ',' + parts[1] : '');
+  }
+
+  function formatNumber(n){
+    if(!Number.isFinite(n)) return 'Error';
+    return new Intl.NumberFormat('es-ES',{maximumFractionDigits:10}).format(n);
+  }
+
+  function exprText(arr){
+    return arr.join(' ');
+  }
+
+  function render(){
+    display.textContent = formatEntry(current);
+
+    if(!forceActive){
+      const visible = [...tokens];
+      if(!fresh && !evaluated) visible.push(current);
+      expression.textContent = exprText(visible);
+    }
+
+    cursor.style.opacity = (current === '0' && tokens.length === 0 && !forceActive) ? '0' : '0';
+  }
+
+  function jsExpression(arr){
+    return arr.map(v => {
+      if(v === '×') return '*';
+      if(v === '÷') return '/';
+      if(v === '−') return '-';
+      return v;
+    }).join('');
+  }
+
+  function evaluateTokens(arr){
+    let working = [...arr];
+    while(working.length && operators.includes(working[working.length-1])) working.pop();
+    if(!working.length) return Number(current);
+
+    const source = jsExpression(working);
+    if(!/^[0-9+\-*/().]+$/.test(source)) return NaN;
+
+    try{
+      return Function('"use strict";return (' + source + ')')();
+    }catch{
+      return NaN;
+    }
+  }
+
+  function currentExpressionArray(){
+    const arr = [...tokens];
+    if(!fresh) arr.push(current);
+    return arr;
+  }
+
+  function getSubtotal(){
+    const arr = currentExpressionArray();
+    return arr.length ? evaluateTokens(arr) : Number(current);
+  }
+
+  function reset(){
+    tokens = [];
+    current = '0';
+    fresh = true;
+    evaluated = false;
+    forceActive = false;
+    forceDigits = '';
+    forceIndex = 0;
+    forceBase = 0;
+    forceTarget = 0;
+    forceFinished = false;
+    expression.textContent = '';
+    render();
+  }
+
+  function todayTargetString(){
+    const d = new Date();
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yy = String(d.getFullYear()).slice(-2);
+    const yyyy = String(d.getFullYear());
+
+    if(dateFormat.value === 'DDMMYYYY') return dd + mm + yyyy;
+    if(dateFormat.value === 'YYYYMMDD') return yyyy + mm + dd;
+    return dd + mm + yy;
+  }
+
+  function getTargetString(){
+    if(mode === 'custom'){
+      return customTarget.value.replace(/\D/g,'').slice(0,12) || '0';
+    }
+    return todayTargetString();
+  }
+
+  function getTarget(){
+    return Number(getTargetString());
+  }
+
+  function updateSettings(){
+    todayModeBtn.classList.toggle('active',mode === 'today');
+    customModeBtn.classList.toggle('active',mode === 'custom');
+    formatField.classList.toggle('hidden',mode !== 'today');
+    customField.classList.toggle('hidden',mode !== 'custom');
+    targetPreview.textContent = formatNumber(getTarget());
+  }
+
+  function inputDigit(d){
+    if(forceActive){
+      // El espectador pulsa cualquier número.
+      // La app ignora cuál ha pulsado y escribe el siguiente
+      // dígito de (objetivo - subtotal).
+      if(forceFinished) return;
+
+      if(forceIndex === 0) current = '';
+      current += forceDigits[forceIndex];
+      forceIndex += 1;
+
+      display.textContent = formatEntry(current);
+      expression.textContent = formatNumber(forceBase) + ' + ' + formatEntry(current);
+
+      if(forceIndex >= forceDigits.length){
+        forceFinished = true;
+      }
+      return;
+    }
+
+    if(evaluated){
+      tokens = [];
+      current = d;
+      fresh = false;
+      evaluated = false;
+    }else if(fresh || current === '0'){
+      current = d;
+      fresh = false;
+    }else if(current.replace('.','').replace('-','').length < 14){
+      current += d;
+    }
+    render();
+  }
+
+  function inputDecimal(){
+    if(forceActive) return;
+
+    if(evaluated){
+      tokens = [];
+      current = '0.';
+      fresh = false;
+      evaluated = false;
+    }else if(fresh){
+      current = '0.';
+      fresh = false;
+    }else if(!current.includes('.')){
+      current += '.';
+    }
+    render();
+  }
+
+  function inputOperator(op){
+    if(forceActive) return;
+
+    if(evaluated){
+      tokens = [current,op];
+      fresh = true;
+      evaluated = false;
+      render();
+      return;
+    }
+
+    if(!fresh) tokens.push(current);
+
+    if(tokens.length && operators.includes(tokens[tokens.length-1])){
+      tokens[tokens.length-1] = op;
+    }else{
+      tokens.push(op);
+    }
+
+    fresh = true;
+    render();
+  }
+
+  function normalEquals(){
+    if(forceActive) return;
+
+    const arr = currentExpressionArray();
+    const result = evaluateTokens(arr);
+
+    if(!Number.isFinite(result)){
+      expression.textContent = 'Error';
+      current = '0';
+      tokens = [];
+      fresh = true;
+      return render();
+    }
+
+    expression.textContent = exprText(arr) + ' =';
+    current = String(Number(result.toFixed(10)));
+    display.textContent = formatEntry(current);
+    tokens = [];
+    fresh = true;
+    evaluated = true;
+  }
+
+  function longEquals(){
+    if(forceActive){
+      if(!forceFinished) return;
+
+      expression.textContent =
+        formatNumber(forceBase) + ' + ' + formatNumber(Number(forceDigits)) + ' =';
+
+      current = String(forceTarget);
+      display.textContent = formatEntry(current);
+
+      forceActive = false;
+      forceDigits = '';
+      forceIndex = 0;
+      forceFinished = false;
+      tokens = [];
+      fresh = true;
+      evaluated = true;
+      return;
+    }
+
+    normalEquals();
+  }
+
+  function armFinal(){
+    const subtotal = getSubtotal();
+    const target = getTarget();
+
+    // Si no puede hacerse de forma segura, dejamos + funcionando normalmente.
+    if(!Number.isFinite(subtotal) || !Number.isInteger(subtotal) ||
+       !Number.isFinite(target) || !Number.isInteger(target) ||
+       target <= subtotal){
+      return false;
+    }
+
+    forceBase = subtotal;
+    forceTarget = target;
+    forceDigits = String(target - subtotal);
+    forceIndex = 0;
+    forceFinished = false;
+    forceActive = true;
+
+    tokens = [];
+    current = '0';
+    fresh = false;
+    evaluated = false;
+
+    expression.textContent = formatNumber(forceBase) + ' +';
+    display.textContent = '0';
+
+    return true;
+  }
+
+  function backspace(){
+    if(forceActive) return;
+    if(evaluated) return reset();
+
+    if(!fresh && current.length > 1){
+      current = current.slice(0,-1);
+    }else{
+      current = '0';
+      fresh = true;
+    }
+    render();
+  }
+
+  function percent(){
+    if(forceActive) return;
+    if(fresh) return;
+    current = String(Number(current) / 100);
+    render();
+  }
+
+  function parentheses(){
+    if(forceActive) return;
+
+    const arr = currentExpressionArray();
+    const opens = arr.filter(v => v === '(').length;
+    const closes = arr.filter(v => v === ')').length;
+
+    if(fresh){
+      if(opens > closes && tokens.length && !operators.includes(tokens[tokens.length-1]) && tokens[tokens.length-1] !== '('){
+        tokens.push(')');
+      }else{
+        tokens.push('(');
+      }
+    }else{
+      tokens.push(current);
+      current = '0';
+      fresh = true;
+      if(opens > closes){
+        tokens.push(')');
+      }else{
+        tokens.push('×','(');
+      }
+    }
+    render();
+  }
+
+  document.querySelectorAll('[data-digit]').forEach(btn => {
+    btn.addEventListener('click',()=>inputDigit(btn.dataset.digit));
+  });
+
+  document.querySelectorAll('[data-op]').forEach(btn => {
+    btn.addEventListener('click',()=>inputOperator(btn.dataset.op));
+  });
+
+  $('#decimal').addEventListener('click',inputDecimal);
+  $('#backspace').addEventListener('click',backspace);
+  $('#percent').addEventListener('click',percent);
+  $('#paren').addEventListener('click',parentheses);
+
+  // Doble toque rápido en + = activar fase final.
+  $('#plus').addEventListener('click',()=>{
+    const now = Date.now();
+
+    if(now - lastPlusTap < 310){
+      clearTimeout(plusTimer);
+      lastPlusTap = 0;
+
+      if(!armFinal()){
+        inputOperator('+');
+      }
+      return;
+    }
+
+    lastPlusTap = now;
+    plusTimer = setTimeout(()=>{
+      inputOperator('+');
+      lastPlusTap = 0;
+    },320);
+  });
+
+  // AC corto = borrar todo.
+  // AC mantenido ~0,8 s = configuración secreta.
+  $('#ac').addEventListener('pointerdown',()=>{
+    acLong = false;
+    acTimer = setTimeout(()=>{
+      acLong = true;
+      updateSettings();
+      settingsOverlay.classList.add('show');
+    },800);
+  });
+
+  function finishAC(){
+    clearTimeout(acTimer);
+    if(!acLong) reset();
+    acLong = false;
+  }
+
+  $('#ac').addEventListener('pointerup',finishAC);
+  $('#ac').addEventListener('pointercancel',()=>clearTimeout(acTimer));
+  $('#ac').addEventListener('pointerleave',()=>clearTimeout(acTimer));
+
+  // = corto = cálculo normal.
+  // = mantenido ~0,8 s = suma final/revelación.
+  $('#equals').addEventListener('pointerdown',()=>{
+    eqLong = false;
+    eqTimer = setTimeout(()=>{
+      eqLong = true;
+      longEquals();
+    },800);
+  });
+
+  function finishEquals(){
+    clearTimeout(eqTimer);
+    if(!eqLong) normalEquals();
+    eqLong = false;
+  }
+
+  $('#equals').addEventListener('pointerup',finishEquals);
+  $('#equals').addEventListener('pointercancel',()=>clearTimeout(eqTimer));
+  $('#equals').addEventListener('pointerleave',()=>clearTimeout(eqTimer));
+
+  todayModeBtn.addEventListener('click',()=>{
+    mode = 'today';
+    updateSettings();
+  });
+
+  customModeBtn.addEventListener('click',()=>{
+    mode = 'custom';
+    updateSettings();
+  });
+
+  dateFormat.addEventListener('change',updateSettings);
+
+  customTarget.addEventListener('input',()=>{
+    customTarget.value = customTarget.value.replace(/\D/g,'').slice(0,12);
+    updateSettings();
+  });
+
+  $('#saveSettings').addEventListener('click',()=>{
+    localStorage.setItem('magic_mode',mode);
+    localStorage.setItem('magic_date_format',dateFormat.value);
+    localStorage.setItem('magic_custom_target',customTarget.value);
+
+    settingsOverlay.classList.remove('show');
+    reset();
+  });
+
+  settingsOverlay.addEventListener('click',(e)=>{
+    if(e.target === settingsOverlay){
+      settingsOverlay.classList.remove('show');
+    }
+  });
+
+  updateSettings();
+  render();
+
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
